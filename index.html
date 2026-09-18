@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Budget Tracker | Lacak Pengeluaranmu</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===== HEADER — Net Balance Display ===== -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-icon">💰</span>
+        <span class="brand-name">Budget Tracker</span>
+      </div>
+      <div class="balance-card" id="balance-card">
+        <p class="balance-label">Saldo Bersih</p>
+        <p class="balance-amount net-balance--zero" id="net-balance-display">Rp 0,00</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== GLOBAL ERROR BANNER ===== -->
+  <div class="global-error-banner" id="global-error-banner" aria-live="assertive" hidden>
+    <span class="global-error-icon">⚠️</span>
+    <span id="global-error-message"></span>
+    <button class="global-error-close" id="global-error-close" aria-label="Tutup pesan error">✕</button>
+  </div>
+
+  <!-- ===== TAB NAVIGATION ===== -->
+  <nav class="tab-nav" role="tablist" aria-label="Navigasi utama">
+    <button
+      class="tab-btn tab-btn--active"
+      role="tab"
+      data-tab="pengeluaran"
+      aria-selected="true"
+      aria-controls="tab-pengeluaran"
+    >
+      <span>💸</span> Pengeluaran
+    </button>
+    <button
+      class="tab-btn"
+      role="tab"
+      data-tab="pemasukan"
+      aria-selected="false"
+      aria-controls="tab-pemasukan"
+    >
+      <span>💵</span> Pemasukan
+    </button>
+    <button
+      class="tab-btn"
+      role="tab"
+      data-tab="tabungan"
+      aria-selected="false"
+      aria-controls="tab-tabungan"
+    >
+      <span>🏦</span> Tabungan
+    </button>
+    <button
+      class="tab-btn"
+      role="tab"
+      data-tab="profil"
+      aria-selected="false"
+      aria-controls="tab-profil"
+    >
+      <span>👤</span> Profil
+    </button>
+  </nav>
+
+  <!-- ===== TAB: PENGELUARAN ===== -->
+  <section id="tab-pengeluaran" role="tabpanel" aria-labelledby="tab-btn-pengeluaran">
+
+    <main class="main-content">
+
+      <!-- LEFT COLUMN: Form + Transaction List -->
+      <div class="left-column">
+
+        <!-- Input Form Section -->
+        <section class="card form-card" aria-labelledby="form-heading">
+          <h2 class="card-title" id="form-heading">
+            <span>➕</span> Tambah Transaksi
+          </h2>
+
+          <form id="transaction-form" novalidate>
+
+            <!-- Name field -->
+            <div class="form-group">
+              <label class="form-label" for="input-name">Nama Item</label>
+              <input
+                type="text"
+                id="input-name"
+                class="form-input"
+                placeholder="Contoh: Nasi Goreng"
+                maxlength="100"
+                autocomplete="off"
+                aria-describedby="error-name"
+              />
+              <span class="field-error" id="error-name" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Amount field -->
+            <div class="form-group">
+              <label class="form-label" for="input-amount">Jumlah (Rp)</label>
+              <input
+                type="number"
+                id="input-amount"
+                class="form-input"
+                placeholder="Contoh: 25000"
+                min="0.01"
+                max="999999999.99"
+                step="0.01"
+                aria-describedby="error-amount"
+              />
+              <span class="field-error" id="error-amount" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Category field -->
+            <div class="form-group">
+              <label class="form-label" for="input-category">Kategori</label>
+              <select
+                id="input-category"
+                class="form-input form-select"
+                aria-describedby="error-category"
+              >
+                <option value="">-- Pilih Kategori --</option>
+                <option value="Food">🍽️ Food</option>
+                <option value="Transport">🚗 Transport</option>
+                <option value="Fun">🎉 Fun</option>
+              </select>
+              <span class="field-error" id="error-category" role="alert" aria-live="polite"></span>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btn-submit">
+              <span>Tambah Transaksi</span>
+            </button>
+
+          </form>
+        </section>
+
+        <!-- Transaction List Section -->
+        <section class="card list-card" aria-labelledby="list-heading">
+          <h2 class="card-title" id="list-heading">
+            <span>📋</span> Riwayat Transaksi
+          </h2>
+          <div class="transaction-list" id="transaction-list" role="list" aria-live="polite">
+            <!-- rendered by UIModule.renderList() -->
+          </div>
+        </section>
+
+      </div><!-- /.left-column -->
+
+      <!-- RIGHT COLUMN: Chart -->
+      <div class="right-column">
+        <section class="card chart-card" aria-labelledby="chart-heading">
+          <h2 class="card-title" id="chart-heading">
+            <span>📊</span> Distribusi Pengeluaran
+          </h2>
+          <div class="chart-container">
+            <canvas id="expense-chart" aria-label="Pie chart distribusi pengeluaran per kategori"></canvas>
+            <div class="chart-empty-state" id="chart-empty-state">
+              <span class="chart-empty-icon">📉</span>
+              <p>Belum ada data pengeluaran untuk ditampilkan.</p>
+            </div>
+          </div>
+          <div class="chart-legend" id="chart-legend">
+            <div class="legend-item">
+              <span class="legend-dot" style="background:#f59e0b"></span>
+              <span>🍽️ Food</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:#3b82f6"></span>
+              <span>🚗 Transport</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:#8b5cf6"></span>
+              <span>🎉 Fun</span>
+            </div>
+          </div>
+        </section>
+      </div><!-- /.right-column -->
+
+    </main>
+
+  </section><!-- /#tab-pengeluaran -->
+
+  <!-- ===== TAB: PEMASUKAN ===== -->
+  <section id="tab-pemasukan" role="tabpanel" aria-labelledby="tab-btn-pemasukan" hidden>
+
+    <main class="main-content">
+
+      <!-- LEFT COLUMN: Income Form + Income List -->
+      <div class="left-column">
+
+        <!-- Income Form Section -->
+        <section class="card form-card" aria-labelledby="income-form-heading">
+          <h2 class="card-title" id="income-form-heading">
+            <span>➕</span> Tambah Pemasukan
+          </h2>
+
+          <form id="income-form" novalidate>
+
+            <!-- Income Name field -->
+            <div class="form-group">
+              <label class="form-label" for="income-name">Sumber Pemasukan</label>
+              <input
+                type="text"
+                id="income-name"
+                class="form-input"
+                placeholder="Contoh: Gaji Bulan Januari"
+                maxlength="100"
+                autocomplete="off"
+                aria-describedby="error-income-name"
+              />
+              <span class="field-error" id="error-income-name" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Income Amount field -->
+            <div class="form-group">
+              <label class="form-label" for="income-amount">Jumlah (Rp)</label>
+              <input
+                type="number"
+                id="income-amount"
+                class="form-input"
+                placeholder="Contoh: 5000000"
+                min="0.01"
+                max="999999999.99"
+                step="0.01"
+                aria-describedby="error-income-amount"
+              />
+              <span class="field-error" id="error-income-amount" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Income Category field -->
+            <div class="form-group">
+              <label class="form-label" for="income-category">Kategori</label>
+              <select
+                id="income-category"
+                class="form-input form-select"
+                aria-describedby="error-income-category"
+              >
+                <option value="">-- Pilih Kategori --</option>
+                <option value="Gaji">💼 Gaji</option>
+                <option value="Freelance">💻 Freelance</option>
+                <option value="Bisnis">🏢 Bisnis</option>
+                <option value="Lainnya">📦 Lainnya</option>
+              </select>
+              <span class="field-error" id="error-income-category" role="alert" aria-live="polite"></span>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btn-income-submit">
+              <span>Tambah Pemasukan</span>
+            </button>
+
+          </form>
+        </section>
+
+        <!-- Income List Section -->
+        <section class="card list-card" aria-labelledby="income-list-heading">
+          <h2 class="card-title" id="income-list-heading">
+            <span>📋</span> Riwayat Pemasukan
+          </h2>
+          <div class="transaction-list" id="income-list" role="list" aria-live="polite">
+            <!-- rendered by UIModule.renderIncomeList() -->
+          </div>
+        </section>
+
+      </div><!-- /.left-column -->
+
+      <!-- RIGHT COLUMN: Income Total -->
+      <div class="right-column">
+        <section class="card chart-card" aria-labelledby="income-total-heading">
+          <h2 class="card-title" id="income-total-heading">
+            <span>💰</span> Total Pemasukan
+          </h2>
+          <div class="total-display-container">
+            <p class="total-display-label">Total Pemasukan Kamu</p>
+            <p class="total-display-amount" id="income-total-display">Rp 0,00</p>
+          </div>
+        </section>
+      </div><!-- /.right-column -->
+
+    </main>
+
+  </section><!-- /#tab-pemasukan -->
+
+  <!-- ===== TAB: TABUNGAN ===== -->
+  <section id="tab-tabungan" role="tabpanel" aria-labelledby="tab-btn-tabungan" hidden>
+
+    <main class="main-content">
+
+      <!-- LEFT COLUMN: Savings Form + Savings List -->
+      <div class="left-column">
+
+        <!-- Savings Form Section -->
+        <section class="card form-card" aria-labelledby="savings-form-heading">
+          <h2 class="card-title" id="savings-form-heading">
+            <span>➕</span> Tambah Tabungan
+          </h2>
+
+          <form id="savings-form" novalidate>
+
+            <!-- Savings Goal Name field -->
+            <div class="form-group">
+              <label class="form-label" for="savings-goal-name">Nama Tujuan Tabungan</label>
+              <input
+                type="text"
+                id="savings-goal-name"
+                class="form-input"
+                placeholder="Contoh: Dana Darurat"
+                maxlength="100"
+                autocomplete="off"
+                aria-describedby="error-savings-goal-name"
+              />
+              <span class="field-error" id="error-savings-goal-name" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Savings Amount field -->
+            <div class="form-group">
+              <label class="form-label" for="savings-amount">Jumlah (Rp)</label>
+              <input
+                type="number"
+                id="savings-amount"
+                class="form-input"
+                placeholder="Contoh: 500000"
+                min="0.01"
+                max="999999999.99"
+                step="0.01"
+                aria-describedby="error-savings-amount"
+              />
+              <span class="field-error" id="error-savings-amount" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Savings Date field -->
+            <div class="form-group">
+              <label class="form-label" for="savings-date">Tanggal</label>
+              <input
+                type="date"
+                id="savings-date"
+                class="form-input"
+                aria-describedby="error-savings-date"
+              />
+              <span class="field-error" id="error-savings-date" role="alert" aria-live="polite"></span>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btn-savings-submit">
+              <span>Tambah Tabungan</span>
+            </button>
+
+          </form>
+        </section>
+
+        <!-- Savings List Section -->
+        <section class="card list-card" aria-labelledby="savings-list-heading">
+          <h2 class="card-title" id="savings-list-heading">
+            <span>📋</span> Riwayat Tabungan
+          </h2>
+          <div class="transaction-list" id="savings-list" role="list" aria-live="polite">
+            <!-- rendered by UIModule.renderSavingsList() -->
+          </div>
+        </section>
+
+      </div><!-- /.left-column -->
+
+      <!-- RIGHT COLUMN: Savings Total -->
+      <div class="right-column">
+        <section class="card chart-card" aria-labelledby="savings-total-heading">
+          <h2 class="card-title" id="savings-total-heading">
+            <span>🏦</span> Total Tabungan
+          </h2>
+          <div class="total-display-container">
+            <p class="total-display-label">Total Tabungan Kamu</p>
+            <p class="total-display-amount" id="savings-total-display">Rp 0,00</p>
+          </div>
+        </section>
+      </div><!-- /.right-column -->
+
+    </main>
+
+  </section><!-- /#tab-tabungan -->
+
+  <!-- ===== TAB: PROFIL ===== -->
+  <section id="tab-profil" role="tabpanel" aria-labelledby="tab-btn-profil" hidden>
+
+    <main class="main-content main-content--centered">
+
+      <div class="profile-column">
+
+        <!-- Profile Form Section -->
+        <section class="card form-card" aria-labelledby="profile-form-heading">
+          <h2 class="card-title" id="profile-form-heading">
+            <span>👤</span> Data Profil
+          </h2>
+
+          <!-- Success Message -->
+          <div
+            class="profile-success-message"
+            id="profile-success-message"
+            role="status"
+            aria-live="polite"
+            hidden
+          >
+            <span>✅</span> Profil berhasil disimpan!
+          </div>
+
+          <form id="profile-form" novalidate>
+
+            <!-- Full Name field -->
+            <div class="form-group">
+              <label class="form-label" for="profile-full-name">Nama Lengkap <span aria-hidden="true">*</span></label>
+              <input
+                type="text"
+                id="profile-full-name"
+                class="form-input"
+                placeholder="Contoh: Budi Santoso"
+                maxlength="100"
+                autocomplete="name"
+                aria-describedby="error-profile-full-name"
+                required
+              />
+              <span class="field-error" id="error-profile-full-name" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Birth Date field -->
+            <div class="form-group">
+              <label class="form-label" for="profile-birth-date">Tanggal Lahir <span class="form-label--optional">(opsional)</span></label>
+              <input
+                type="date"
+                id="profile-birth-date"
+                class="form-input"
+                autocomplete="bday"
+                aria-describedby="error-profile-birth-date"
+              />
+              <span class="field-error" id="error-profile-birth-date" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Phone field -->
+            <div class="form-group">
+              <label class="form-label" for="profile-phone">Nomor Telepon <span class="form-label--optional">(opsional)</span></label>
+              <input
+                type="tel"
+                id="profile-phone"
+                class="form-input"
+                placeholder="Contoh: +62 812-3456-7890"
+                maxlength="20"
+                autocomplete="tel"
+                aria-describedby="error-profile-phone"
+              />
+              <span class="field-error" id="error-profile-phone" role="alert" aria-live="polite"></span>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btn-profile-submit">
+              <span>Simpan Profil</span>
+            </button>
+
+          </form>
+        </section>
+
+      </div><!-- /.profile-column -->
+
+    </main>
+
+  </section><!-- /#tab-profil -->
+
+  <footer class="site-footer">
+    <p>Budget Tracker &copy; 2025 — Dibangun dengan ❤️ menggunakan HTML, CSS &amp; JavaScript murni.</p>
+  </footer>
+
+  <!-- External library via CDN (Chart.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Custom app script -->
+  <script src="js/app.js"></script>
+
+</body>
+</html>
